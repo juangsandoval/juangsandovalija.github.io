@@ -33,6 +33,7 @@
   <script>
     let workbook; // Guardamos el Excel cargado
     let datos = []; // Datos leídos de Excel
+    let filaActual = 1; // Fila que estamos editando (empezamos con la segunda fila)
 
     // Leer archivo Excel
     document.getElementById('input-excel').addEventListener('change', (event) => {
@@ -43,22 +44,34 @@
         workbook = XLSX.read(data, { type: 'array' });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         datos = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-        mostrarTabla();
+        mostrarTabla(); // Mostrar encabezado y la fila actual
       };
       reader.readAsArrayBuffer(file);
     });
 
-    // Mostrar tabla en HTML
+    // Mostrar tabla en HTML (solo encabezado y fila actual)
     function mostrarTabla() {
       let html = "<table border='1' cellpadding='5'>";
-      datos.forEach(row => {
+      
+      // Mostrar encabezado
+      html += "<tr>";
+      datos[0].forEach(cell => {
+        html += `<th>${cell || ""}</th>`;
+      });
+      html += "</tr>";
+
+      // Mostrar la fila actual
+      if (filaActual < datos.length) {
         html += "<tr>";
-        row.forEach(cell => {
+        datos[filaActual].forEach(cell => {
           html += `<td>${cell || ""}</td>`;
         });
         html += "</tr>";
-      });
+      } else {
+        html += "<tr><td colspan='3'>No hay más filas para editar.</td></tr>";
+      }
       html += "</table>";
+
       document.getElementById('tabla').innerHTML = html;
     }
 
@@ -69,8 +82,16 @@
       const edad = document.getElementById('edad').value;
       const ciudad = document.getElementById('ciudad').value;
 
-      // Agregar fila nueva
-      datos.push([nombre, edad, ciudad]);
+      // Guardar los datos en la fila actual
+      datos[filaActual] = [nombre, edad, ciudad];
+      filaActual++; // Pasar a la siguiente fila
+
+      // Limpiar el formulario
+      document.getElementById('nombre').value = "";
+      document.getElementById('edad').value = "";
+      document.getElementById('ciudad').value = "";
+
+      // Mostrar tabla con la fila siguiente para llenar
       mostrarTabla();
     });
 
